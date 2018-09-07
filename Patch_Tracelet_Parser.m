@@ -7,8 +7,8 @@ clc
 %  squares in order.
 
 acqRate = 20;
-pre = 25; 
-post = 75;
+pre = 50; 
+post = 150;
 points = acqRate*(pre+post)+1; %Number of datapoints
 
 %% Load files
