@@ -131,4 +131,8 @@ clear ans baseline coord* fid i j max* Patch* Path* Poly* Trace*
 
 save(ParsedFile)
 
+%% Run the grid analysis file
+% Running the next script in the pipeline
+
+run('Grid_Analysis.m')
 

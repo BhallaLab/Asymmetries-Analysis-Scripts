@@ -59,7 +59,14 @@ print(AucImageFile,'-dpng')
 
 %% Generate traces figure
 figure;
-axis([-1*pre post -5 1.1*max(max(orderedPatchTracelets))])
+%Y-axis values are set to be 10% more than the min and max of all the
+%tracelets
+axis([-1*pre post 1.1*min(min(orderedPatchTracelets)) 1.1*max(max(orderedPatchTracelets))])
+
+%drawing a figure and making it fullscreen size
+figurePSTH=gcf;
+figurePSTH.Units='normalized';
+figurePSTH.OuterPosition=[0 0 1 1];
 
 %plotting only one polygon TTL trace for reference
 for row=1:length(locs)
@@ -70,7 +77,7 @@ end
 hold on;
 orderedPolTracelets(orderedPolTracelets>10)=10; %cap the TTL signal at 10
 TTLGraph = area(timeTracelet,orderedPolTracelets(1,:));
-TTLGraph.Facecolor = 'red'; %setting colour to red
+TTLGraph.FaceColor = 'red'; %setting colour to red
 TTLGraph.FaceAlpha = 0.5; 
 
 hold on;
@@ -97,17 +104,23 @@ print(response_traces,'-dpng')
 % 2. Get a histogram of timings
 
 % Create figure
-figurePSTH = figure;
+
+figure;
+figurePSTH=gcf;
+figurePSTH.Units='normalized'; %making the figure size in normalized units
+figurePSTH.OuterPosition=[0 0 1 1]; %size of the figure -> full screen
 
 % Create axes
 axesPSTH = axes('Parent',figurePSTH);
 hold(axesPSTH,'on');
 box(axesPSTH,'on');
+set(axesPSTH, 'fontsize', 10)
+
 % Set the remaining axes properties
 set(axesPSTH,'XTick',...
     [0 100 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500 1600 1700 1800 1900 2000 2100 2200 2300 2400 2500 2600 2700 2800 2900 3000 3100 3200 3300 3400 3500 3600 3700 3800 3900 4000],...
     'XTickLabel',...
-    {'-25','-20','-15','-10','-5','0','5','10','15','20','25','30','35','40','45','50','55','60','65','70','75', '80','85','90','95','100','105','110','115','120','125','130','135','140','145','150'});
+    {'-50','-45','-40','-35','-30','-25','-20','-15','-10','-5','0','5','10','15','20','25','30','35','40','45','50','55','60','65','70','75', '80','85','90','95','100','105','110','115','120','125','130','135','140','145','150'});
 
 % Create histogram
 histogram(TraceletPeakTime,'Parent',axesPSTH,'BinWidth',100);
