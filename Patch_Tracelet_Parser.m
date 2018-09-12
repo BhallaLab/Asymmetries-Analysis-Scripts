@@ -11,6 +11,9 @@ pre = 50;
 post = 150;
 points = acqRate*(pre+post)+1; %Number of datapoints
 
+%getting a pulse duration value for the experiment
+pulseDur = acqRate*input('how long is the pulse in ms?');
+
 %% Load files
 
 [FileName,PathName]=uigetfile('*.mat;*.txt','Pick the Data File'); %Opens a file selection box
@@ -43,9 +46,6 @@ gridSize = sqrt(length(coord));
 % 1)PatchTrace
 % 2)PolygonTrace
 
-%Create TimeTrace
-TimeTrace = linspace(0,length(PatchTrace)/(1000*acqRate),length(PatchTrace));
-
 %First get a differentiated Polygon trace
 PolygonTraceDiff = diff(PolygonTrace);
 
@@ -69,7 +69,7 @@ maxPolygonDiff = max(PolygonTraceDiff);
 
 %Number of peaks is just an added check to get only as many TTLs deteced as
 %there are stimuli.
-[~, locs] = findpeaks(PolygonTrace,'MinPeakHeight',0.2*maxPolygonDiff,'MinPeakDistance',18000,'Npeaks',gridSize^2);
+[~, locs] = findpeaks(PolygonTraceDiff,'MinPeakHeight',0.2*maxPolygonDiff,'MinPeakDistance',18000,'Npeaks',gridSize^2);
 
 % Create a matrix in which each row corresponds to a section of 
 % patch trace around the stimulus
@@ -102,24 +102,33 @@ end
 
 %% Reshuffeling the tracelets according to the external order
 
-orderedTracelets = zeros(size(PatchTracelets));
+orderedPatchTracelets = zeros(size(PatchTracelets));
+orderedPolTracelets = zeros(size(PolygonTracelets));
 for i=1:length(locs)
     % The remapping of squares is done here using a variable 'j' which maps
     % the index i onto the correct coordinate of the square from the coord
     % data
     j = coord(i);
-    orderedTracelets(j,:)= PatchTracelets(i,:);
+    orderedPatchTracelets(j,:)= PatchTracelets(i,:);
+    orderedPolTracelets(j,:)= PolygonTracelets(i,:);
 end
 
-%% Save the data
+%% Creating an example trace for the stimulus
+timeTracelet = linspace(pre*(-1),post,points); % time tracelet
 
-clear ans baseline coord* fid FileName i j peaks maxPolygon
-clear Poly* T*
+%creating an example stimulus trace
+exStimTrace = zeros(1,points);
+exStimTrace(pre*acqRate:pre*acqRate+pulseDur) = 5; % 5 is a safe value for the stim
+
+%% Save the data
 
 mkdir(ExptID)
 ParsedFilePath = strcat(PathName,ExptID,'\');
 cd(ParsedFilePath) %Change the working directory to the path
 ParsedFile = strcat(ParsedFilePath,ExptID,'_Parsed_Tracelets_',num2str(gridSize),'.mat');
+
+clear ans baseline coord* fid i j max* Patch* Path* Poly* Trace*
+
 save(ParsedFile)
 
 

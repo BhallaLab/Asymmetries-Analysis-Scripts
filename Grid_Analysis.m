@@ -14,21 +14,20 @@ TraceletFile = strcat(PathName,FileName);
 cd(PathName) %Change the working directory to the path
 load(FileName)
 
+
 %% calculate peak of responses
 gridPeak=zeros(gridSize);
 
 for i=1:length(locs)
-    gridPeak(i)=max(orderedTracelets(i,:));
-    % Clip any response that grows above 30 mV so that
-    % the resolution of heat map can be improved
-    if gridPeak(i) > 30
-        gridPeak(i)=30;
-    end
+    gridPeak(i)=max(orderedPatchTracelets(i,:));
 end
 gridPeak = gridPeak';
 
-% Generate and save map of peak responses
+% Clip any response that grows above 30 mV so that
+% the resolution of heat map can be improved.
+gridPeak(gridPeak>30)=30; % this is better way of capping values than doing it inside the for loop
 
+% Generate and save map of peak responses
 figure
 gridPeakMap = imagesc(gridPeak);
 colormap('jet')
@@ -45,12 +44,11 @@ gridAuc=zeros(gridSize);
 aucDuration = pre*acqRate:(pre+post)*acqRate;
 
 for i=1:length(locs)
-    gridAuc(i)=trapz(orderedTracelets(i,aucDuration));
+    gridAuc(i)=trapz(orderedPatchTracelets(i,aucDuration));
 end
 gridAuc = gridAuc';
 
 % Generate and save map of AUC values
-
 figure
 gridAucMap = imagesc(gridAuc);
 colormap('jet')
@@ -60,14 +58,25 @@ AucImageFile = strcat(ExptID,'_gridAucMap_',num2str(gridSize),'x');
 print(AucImageFile,'-dpng')
 
 %% Generate traces figure
-figure
-timeTrace = linspace(pre*(-1),post,1+(pre+post)*acqRate);
+figure;
+axis([-1*pre post -5 1.1*max(max(orderedPatchTracelets))])
 
+%plotting only one polygon TTL trace for reference
 for row=1:length(locs)
     hold on
-    plot(timeTrace,orderedTracelets(row,:),'k')
-    axis([-1*pre post -5 10])
+    plot(timeTracelet,orderedPatchTracelets(row,:),'k')        
 end
+
+hold on;
+orderedPolTracelets(orderedPolTracelets>10)=10; %cap the TTL signal at 10
+TTLGraph = area(timeTracelet,orderedPolTracelets(1,:));
+TTLGraph.Facecolor = 'red'; %setting colour to red
+TTLGraph.FaceAlpha = 0.5; 
+
+hold on;
+stimGraph = area(timeTracelet,exStimTrace); %plotting the stimulus trace for reference
+stimGraph.FaceColor = 'blue' ; %setting colour to be blue
+stimGraph.FaceAlpha = 0.5 ; %setting transparency
 
 title('Response traces from baseline')
 response_traces = strcat(ExptID,'_response_traces_',num2str(gridSize),'x');
@@ -83,7 +92,7 @@ print(response_traces,'-dpng')
 % the function max finds maxima along columns, therefore the matrix of
 % responses needs to be transposed.
 
-[TraceletMax, TraceletPeakTime]= max(orderedTracelets,[],2);
+[TraceletMax, TraceletPeakTime]= max(orderedPatchTracelets,[],2);
 
 % 2. Get a histogram of timings
 
