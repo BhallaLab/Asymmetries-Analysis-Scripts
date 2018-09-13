@@ -1,6 +1,3 @@
-clearvars
-clc
-
 %% Load .mat file with parsed tracelets
 
 % These tracelets are going to be ordered whether external order or
@@ -9,10 +6,10 @@ clc
 % PatchTracelets is not shuffeled, orderedTracelets is always shuffled
 % according to the stimluation square order
 
-[FileName,PathName]=uigetfile('*.mat','Pick the Parsed Patch tracelet File'); %Opens a file selection box
-TraceletFile = strcat(PathName,FileName);
-cd(PathName) %Change the working directory to the path
-load(FileName)
+% [FileName,PathName]=uigetfile('*.mat','Pick the Parsed Patch tracelet File'); %Opens a file selection box
+% TraceletFile = strcat(PathName,FileName);
+% cd(PathName) %Change the working directory to the path
+% load(FileName)
 
 
 %% calculate peak of responses
@@ -158,4 +155,5 @@ h = colorbar();
 title('Time of Peak of Responses for the stimulation')
 TimeofPeakImageFile = strcat(ExptID,'_gridTimeofPeakMap_',num2str(gridSize),'x');
 print(TimeofPeakImageFile,'-dpng')
+
 
