@@ -46,12 +46,14 @@ gridSize = sqrt(length(coord));
 % 1)PatchTrace
 % 2)PolygonTrace
 
-%First get a differentiated Polygon trace
-PolygonTraceDiff = diff(PolygonTrace);
+%First get a thesholded Polygon trace and binarize it.
+% The expression "PolygonTrace>50" would generate a logical array which
+% won't be useful for calculation or findpeaks function. To convert it into
+% a double array, we can multiply it with 1.00. Therefore the logical
+% expression binarizes the Polygon trace and the multiplication generates
+% an array of numbers.
 
-%Find out the maximum value of polygon TTL received to use that
-% to find locations of the peaks
-maxPolygonDiff = max(PolygonTraceDiff);
+PolygonTraceThres = 1.00*(PolygonTrace>50);
 
 % Locations of the TTLs in channel 2 i.e. Polygon
 % In the line below the original output of the function was to [peaks, locs]
@@ -59,9 +61,10 @@ maxPolygonDiff = max(PolygonTraceDiff);
 % variable peaks anywhere. Using a tilde instead of a variable ignores that
 % particular function output and saves computing
 %
-%The differentiated trace has sharped rise and fall and therefore is better
-%in locating the TTL onset. Here a threshold of 20% of max is enough to
-%generate precise TTL location.
+%The thresholded trace has sharpe rise and fall and therefore is better
+%in locating the TTL onset. Here a threshold of 50 is enough to
+%generate precise TTL location.In TTL standard, the TTL is counted with the
+%threshold of 0.8 V (whether a TTL is of 3.3 V or 5.0 V).
 
 % MeanPeakDistance depends upon the inter stimulus interval and is going to
 % be 1 sec (20000 points) for 29x29 and 3 sec (60000 points) for 10x10
@@ -69,7 +72,7 @@ maxPolygonDiff = max(PolygonTraceDiff);
 
 %Number of peaks is just an added check to get only as many TTLs deteced as
 %there are stimuli.
-[~, locs] = findpeaks(PolygonTraceDiff,'MinPeakHeight',0.2*maxPolygonDiff,'MinPeakDistance',18000,'Npeaks',gridSize^2);
+[~, locs] = findpeaks(PolygonTraceThres,'MinPeakDistance',18000,'Npeaks',gridSize^2);
 
 % Create a matrix in which each row corresponds to a section of 
 % patch trace around the stimulus
@@ -104,6 +107,7 @@ end
 
 orderedPatchTracelets = zeros(size(PatchTracelets));
 orderedPolTracelets = zeros(size(PolygonTracelets));
+
 for i=1:length(locs)
     % The remapping of squares is done here using a variable 'j' which maps
     % the index i onto the correct coordinate of the square from the coord
@@ -120,6 +124,8 @@ timeTracelet = linspace(pre*(-1),post,points); % time tracelet
 exStimTrace = zeros(1,points);
 exStimTrace(pre*acqRate:pre*acqRate+pulseDur) = 5; % 5 is a safe value for the stim
 
+
+
 %% Save the data
 
 mkdir(ExptID)
@@ -130,6 +136,15 @@ ParsedFile = strcat(ParsedFilePath,ExptID,'_Parsed_Tracelets_',num2str(gridSize)
 clear ans baseline coord* fid i j max* Patch* Path* Poly* Trace*
 
 save(ParsedFile)
+
+%% Generate images
+figure;
+subplot(1,2,1)
+imagesc(orderedPatchTracelets)
+subplot(1,2,2)
+imagesc(orderedPolTracelets)
+
+print('Tracelets.png','-dpng')
 
 %% Run the grid analysis file
 % Running the next script in the pipeline
