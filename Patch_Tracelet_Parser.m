@@ -139,6 +139,11 @@ save(ParsedFile)
 
 %% Generate images
 figure;
+%drawing a figure and making it fullscreen size
+figureTracelets=gcf;
+figureTracelets.Units='normalized';
+figureTracelets.OuterPosition=[0 0 1 1];
+
 subplot(1,2,1)
 imagesc(orderedPatchTracelets)
 subplot(1,2,2)
