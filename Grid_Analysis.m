@@ -29,6 +29,7 @@ figure
 gridPeakMap = imagesc(gridPeak);
 colormap('jet')
 h = colorbar();
+h.Label.String = 'mV';
 title('Peak Response from baseline(Spikes clipped at 30)')
 PeakImageFile = strcat(ExptID,'_gridPeakMap_',num2str(gridSize),'x');
 print(PeakImageFile,'-dpng')
@@ -50,6 +51,7 @@ figure
 gridAucMap = imagesc(gridAuc);
 colormap('jet')
 h = colorbar();
+h.Label.String = 'a.u.';
 title('Area Under the Curve for Responses after the stimulation')
 AucImageFile = strcat(ExptID,'_gridAucMap_',num2str(gridSize),'x');
 print(AucImageFile,'-dpng')
@@ -83,6 +85,8 @@ stimGraph.FaceColor = 'blue' ; %setting colour to be blue
 stimGraph.FaceAlpha = 0.5 ; %setting transparency
 
 title('Response traces from baseline')
+xlabel('Time (ms)');
+ylabel('mV');
 response_traces = strcat(ExptID,'_response_traces_',num2str(gridSize),'x');
 print(response_traces,'-dpng')
 
@@ -122,6 +126,8 @@ set(axesPSTH,'XTick',...
 % Create histogram
 histogram(TraceletPeakTime,'Parent',axesPSTH,'BinWidth',100);
 title('PSTH')
+xlabel('Time after Stimulus (ms)');
+ylabel('Frequency');
 xlim(axesPSTH,[0 4000])
 
 % 3. Save histogram

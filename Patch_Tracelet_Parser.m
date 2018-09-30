@@ -144,10 +144,18 @@ figureTracelets=gcf;
 figureTracelets.Units='normalized';
 figureTracelets.OuterPosition=[0 0 1 1];
 
+
 subplot(1,2,1)
 imagesc(orderedPatchTracelets)
+title('Responses')
+xlabel('Time (datapoints 20/ms)')
+ylabel('Grid Number')
+
 subplot(1,2,2)
 imagesc(orderedPolTracelets)
+title('Polygon Frame Change')
+xlabel('Time (datapoints 20/ms)')
+ylabel('Grid Number')
 
 print('Tracelets.png','-dpng')
 
