@@ -12,7 +12,6 @@
 % load(FileName)
 
 %% Scale bars
-scaleBar = 20; %length of scale bar to be drawn
 
 % Resolution data from Mightex website for Olympus system
 % Full frame = 13900 x 7800 µm (Diagonal = 16000 µm)
@@ -21,6 +20,11 @@ scaleBar = 20; %length of scale bar to be drawn
 frameSize = 16000; %diagonal in µm, fixed for the Polygon 400E model
 objMag = 40;
 res = frameSize/(objMag*gridSize); %pixel size in µm/square for grid29
+if res >=40
+    scaleBar = 50;
+else
+    scaleBar = 20;
+end
 pxInBar = scaleBar/res; %number of pixels in the scale bar
 
 %ceil function with added 0.5 is to ensure that scale bar start point aligns with a square edge.
