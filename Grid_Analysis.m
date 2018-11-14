@@ -11,6 +11,27 @@
 % cd(PathName) %Change the working directory to the path
 % load(FileName)
 
+%% Scale bars
+scaleBar = 20; %length of scale bar to be drawn
+
+% Resolution data from Mightex website for Olympus system
+% Full frame = 13900 x 7800 µm (Diagonal = 16000 µm)
+% Pixel size = 16.2 µm
+
+frameSize = 16000; %diagonal in µm, fixed for the Polygon 400E model
+objMag = 40;
+res = frameSize/(objMag*gridSize); %pixel size in µm/square for grid29
+pxInBar = scaleBar/res; %number of pixels in the scale bar
+
+%ceil function with added 0.5 is to ensure that scale bar start point aligns with a square edge.
+scaleBarPos = ceil(0.8*gridSize)+0.5; 
+lineX = [scaleBarPos scaleBarPos+pxInBar]; %Line start and end points in X-axis
+lineY = [scaleBarPos+0.5 scaleBarPos+0.5]; %Line start and end points in Y-axis
+textX = scaleBarPos; %text should begin where scale bar begins on X-axis
+textY = scaleBarPos+1.5; %text should be 1.5 square below the scale bar in Y-axis
+scaleSize = strcat(num2str(scaleBar),' µm'); %text content
+
+ 
 
 %% calculate peak of responses
 gridPeak=zeros(gridSize);
@@ -31,6 +52,12 @@ colormap('jet')
 h = colorbar();
 h.Label.String = 'mV';
 title('Peak Response from baseline(Spikes clipped at 30)')
+
+%scale bar
+hold on;
+line(lineX,lineY,'Color','w','LineWidth',5);
+text(textX,textY,scaleSize,'Color','w','FontWeight','bold','FontSize',14)
+
 PeakImageFile = strcat(ExptID,'_gridPeakMap_',num2str(gridSize),'x');
 print(PeakImageFile,'-dpng')
 
@@ -53,6 +80,12 @@ colormap('jet')
 h = colorbar();
 h.Label.String = 'a.u.';
 title('Area Under the Curve for Responses after the stimulation')
+
+%scale bar
+hold on;
+line(lineX,lineY,'Color','w','LineWidth',5);
+text(textX,textY,scaleSize,'Color','w','FontWeight','bold','FontSize',14)
+
 AucImageFile = strcat(ExptID,'_gridAucMap_',num2str(gridSize),'x');
 print(AucImageFile,'-dpng')
 
@@ -70,19 +103,24 @@ figurePSTH.OuterPosition=[0 0 1 1];
 %plotting only one polygon TTL trace for reference
 for row=1:length(locs)
     hold on
-    plot(timeTracelet,orderedPatchTracelets(row,:),'k')        
+    plot(timeTracelet,orderedPatchTracelets(row,:),'k','LineWidth',1)        
 end
 
-hold on;
-orderedPolTracelets(orderedPolTracelets>10)=10; %cap the TTL signal at 10
-TTLGraph = area(timeTracelet,orderedPolTracelets(1,:));
-TTLGraph.FaceColor = 'red'; %setting colour to red
-TTLGraph.FaceAlpha = 0.5; 
+% Removed the TTL overlay (does not look good or necessary)
+% hold on;
+% orderedPolTracelets(orderedPolTracelets>10)=10; %cap the TTL signal at 10
+% TTLGraph = area(timeTracelet,orderedPolTracelets(1,:));
+% TTLGraph.FaceColor = 'red'; %setting colour to red
+% TTLGraph.FaceAlpha = 0.5;
+% TTLGraph.LineWidth = 1;
+% TTLGraph.EdgeColor = 'r';
 
 hold on;
 stimGraph = area(timeTracelet,exStimTrace); %plotting the stimulus trace for reference
 stimGraph.FaceColor = 'blue' ; %setting colour to be blue
 stimGraph.FaceAlpha = 0.5 ; %setting transparency
+stimGraph.LineWidth = 1;
+stimGraph.EdgeColor = 'b';
 
 title('Response traces from baseline')
 xlabel('Time (ms)');
@@ -156,10 +194,20 @@ gridTimeofPeak = gridTimeofPeak';
 
 figure
 gridTimeofPeakMap = imagesc(gridTimeofPeak);
-colormap('jet')
+colormap('hot')
 h = colorbar();
 title('Time of Peak of Responses for the stimulation')
+
+%scale bar
+hold on;
+line(lineX,lineY,'Color','w','LineWidth',5);
+text(textX,textY,scaleSize,'Color','w','FontWeight','bold','FontSize',14)
+
 TimeofPeakImageFile = strcat(ExptID,'_gridTimeofPeakMap_',num2str(gridSize),'x');
 print(TimeofPeakImageFile,'-dpng')
+
+%% close all figures
+save(ParsedFile)
+close all
 
 
