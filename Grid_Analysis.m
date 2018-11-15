@@ -211,6 +211,8 @@ TimeofPeakImageFile = strcat(ExptID,'_gridTimeofPeakMap_',num2str(gridSize),'x')
 print(TimeofPeakImageFile,'-dpng')
 
 %% close all figures
+clear axesPSTH figure* gridAucMap gridPeakMap gridTimeofPeakMap h i stimGraph
+
 save(ParsedFile)
 close all
 
