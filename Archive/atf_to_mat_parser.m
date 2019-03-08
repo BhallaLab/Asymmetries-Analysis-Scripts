@@ -8,7 +8,7 @@ exportDir = importDir;
 
 %% read from the import directory and process
 cd(importDir) %Make it the current working directory
-allFiles = dir('Expt*.atf'); %list all the files 
+allFiles = dir('Expt02*.atf'); %list all the files 
 
 
 for i=1:length(allFiles)

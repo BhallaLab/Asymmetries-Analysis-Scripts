@@ -18,7 +18,9 @@
 % Pixel size = 16.2 µm
 
 frameSize = 16000; %diagonal in µm, fixed for the Polygon 400E model
+%ask user to input obj mag
 objMag = 40;
+
 res = frameSize/(objMag*gridSize); %pixel size in µm/square for grid29
 if res >=40
     scaleBar = 50;
@@ -133,7 +135,6 @@ response_traces = strcat(ExptID,'_response_traces_',num2str(gridSize),'x');
 print(response_traces,'-dpng')
 
 %% calculate time of peak for responses
-
 % for PSTH we need to get the timings of the peaks in all the traces. As
 % there are going to be 841 traces for each trial, we can generate a
 % distribution of peaks.
@@ -198,7 +199,7 @@ gridTimeofPeak = gridTimeofPeak';
 
 figure
 gridTimeofPeakMap = imagesc(gridTimeofPeak);
-colormap('hot')
+colormap('jet')
 h = colorbar();
 title('Time of Peak of Responses for the stimulation')
 
