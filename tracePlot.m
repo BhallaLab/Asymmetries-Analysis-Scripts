@@ -36,7 +36,7 @@ title('Response traces from baseline')
 xlabel('Time (ms)');
 ylabel('mV');
 response_traces = strcat(ExptID,'_response_traces_',num2str(gridSize),'x');
-print(response_traces,'-dpng')
+savefig(response_traces)
 
 % %% PSTH
 % % for PSTH we need to get the timings of the peaks in all the traces. As
@@ -80,6 +80,6 @@ print(response_traces,'-dpng')
 % % 3. Save histogram
 % 
 % PSTH = strcat(ExptID,'_PSTH_',num2str(gridSize),'x');
-% print(PSTH,'-dpng')
+% savefig(PSTH,'-dpng')
 
 end

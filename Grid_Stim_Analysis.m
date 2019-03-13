@@ -25,7 +25,7 @@ plot(1:881,cellIR,'b','LineWidth',1);hold on;
 plot(1:881,movmean(cellIR,[10 0]),'r','LineWidth',3)
 title('Input Resistance during the experiment')
 plotFile = strcat(ExptFile,'_IRtrend_');
-print(plotFile,'-dpng')
+savefig(plotFile)
 
 %% Grid Analysis
 peakThres = 30 ; %above the baseline

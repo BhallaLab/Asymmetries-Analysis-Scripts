@@ -1,7 +1,11 @@
 function [lineposX, lineposY, textposX, textposY, scaleSize] = scaleBar(scalebarSize,objMag,gridSize)
-% Resolution data from Mightex website for Olympus system
-% Full frame = 13900 x 7800 µm (Diagonal = 16000 µm)
-% Pixel size = 16.2 µm
+%SCALEBAR gives out specifications to create a scale bar for the heatmaps
+%of the responses. The scale factor depends on the model of the Polygon and
+%objective magnification used in the experiments.
+%
+%Resolution data from Mightex website for Olympus system:
+%Full frame = 13900 x 7800 µm (Diagonal = 16000 µm)
+%Pixel size = 16.2 µm
 
 %---Variables--------------------------------------------------------------
 frameSize = 16000; %diagonal in µm, fixed for the Polygon 400E model

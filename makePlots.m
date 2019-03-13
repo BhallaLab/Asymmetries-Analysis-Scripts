@@ -17,7 +17,7 @@ line(a,b,'Color','w','LineWidth',5);
 text(c,d,e,'Color','w','FontWeight','bold','FontSize',14)
 
 plotFile = strcat(ExptID,'_gridPeakMap_',num2str(gridSize),'x');
-print(plotFile,'-dpng')
+savefig(plotFile)
 
 % AuC heatmap
 gridAUCMap = imagesc(AUCMap);
@@ -32,7 +32,7 @@ line(a,b,'Color','w','LineWidth',5);
 text(c,d,e,'Color','w','FontWeight','bold','FontSize',14)
 
 plotFile = strcat(ExptID,'_gridAUCMap_',num2str(gridSize),'x');
-print(plotFile,'-dpng')
+savefig(plotFile)
 
 % Time to Peak heatmap
 gridtimetopeakMap = imagesc(timeofpeakMap);
@@ -47,7 +47,7 @@ line(a,b,'Color','w','LineWidth',5);
 text(c,d,e,'Color','w','FontWeight','bold','FontSize',14)
 
 plotFile = strcat(ExptID,'_gridtimetoPeakMap_',num2str(gridSize),'x');
-print(plotFile,'-dpng')
+savefig(plotFile)
  
 close all
 end
