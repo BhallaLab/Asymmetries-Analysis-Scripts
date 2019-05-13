@@ -16,7 +16,7 @@ for i=1:size(trials,2)
     end
 end
 
-%Figure
+figure
 plot(iSteps,numSpikes)
 axis([min(iSteps)-20 max(iSteps)+20 0 max(numSpikes)+2])
 xlabel('Time (ms)')

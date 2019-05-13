@@ -1,4 +1,4 @@
-function [IRtrend, peakMap, AUCMap, timetopeakMap, metadata] = gridAnalysis(recFile, coordFile,flank,pulseDur,intensity,gridSize,cellID)
+function [IRtrend, peakMap, AUCMap, timetopeakMap, metadata] = gridAnalysis(recFile, coordFile,flank,pulseDur,intensity,gridSize,responseThres,cellID)
 % GRIDANALYSIS takes:
 % recFile   = File where data is saved (*.atf)
 % coordFile = File with grid square coordinates for polygon frames (*.txt)
@@ -48,8 +48,8 @@ disp('Parsing Done.')
 
 %% Stage 3: Heatmaps
 disp('Getting response maps...')
-peakThres = 30;
-[peakMap, AUCMap, timetopeakMap] = heatmap(patchTrace,peakThres);
+responseThres = 30;
+[peakMap, AUCMap, timetopeakMap] = heatmap(patchTrace,responseThres);
 
 disp('Response maps made.')
 
@@ -234,7 +234,7 @@ end
     xlabel('Time (ms)');
     ylabel('mV');
     response_traces = strcat(cellID,'_response_traces_',num2str(gridSize),'x');
-    print(response_traces,'-dpng')
+%     print(response_traces,'-dpng')
 
     % %% PSTH
     % % for PSTH we need to get the timings of the peaks in all the traces. As
