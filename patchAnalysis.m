@@ -3,7 +3,7 @@
 % single cell's data should be loaded. Rest all the things are taken care
 % of. The file names in the directory should be correctly named and must
 % contain keywords 'IR', 'IF', 'Grid' and 'Coordinates' for the program to
-% indentify them and process. This scrip will analyse and produce results
+% indentify them and process. This script will analyse and produce results
 % for passive properties, IF relationship and grid stimulation heat maps.
 % Check the parameters before running.
 % check the function files also: GETPASSIVEPROP, IFPLOTTER, GRIDANALYSIS,
@@ -43,18 +43,21 @@ if exist('IRFile','var')
     pulseEnd = 600;
     currentPulse = -100; %current pulse in pA
 
-    [IR,Cm,tau]=getPassiveProp(IRFile,pulseStart,pulseEnd,currentPulse);
+    [IRPre,CmPre,tauPre]=getPassiveProp(IRFile,pulseStart,pulseEnd,currentPulse);
 end
+
 
 %% IF Relationship
 if exist('IFFile','var')
     currentSteps = -50:10:140;
     stepStart = 100;
     stepEnd = 600;
-    numSpikes = IFPlotter(IFFile,stepStart,stepEnd,currentSteps);
+    numSpikesPre = IFPlotter(IFFile,stepStart,stepEnd,currentSteps);
 end
 
+
 %% Grid Response Analysis
+tic
 if exist('gridRecFile','var') && exist('coordFile','var')
     blankFrames = 20; % number of blank frames on either side of grid stimulation 
     lightPulseDur = 10; %Light pulse duration, ms
@@ -71,6 +74,8 @@ if exist('gridRecFile','var') && exist('coordFile','var')
     makeHeatPlots(peakMap, AUCMap, timetopeakMap,IRtrend,scaleBar,objMag,gridSize,responseThres,cellID)
 
 end
+toc
+
 %% Save workspace
 save(cellID)
 close all

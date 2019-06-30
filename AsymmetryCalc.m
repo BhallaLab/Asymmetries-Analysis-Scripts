@@ -46,7 +46,18 @@ y = coords(:,1);
 % first draw the figure
 figure
 plotregression(x,y)
+axis('ij')
+title(strcat(cellID,' Thresholded Map'))
+legend('off')
+xlabel('')
+ylabel('')
 print(strcat(cellID,'_reg'),'-dpng')
+
+figure
+gridAucMap = imagesc(rescaleGridWts);
+colormap('jet')
+h = colorbar();
+print(strcat(cellID,'_blank'),'-dpng')
 
 figure
 gridAucMap = imagesc(rescaleGridWts);

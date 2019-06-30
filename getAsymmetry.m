@@ -13,7 +13,7 @@ for i=1:numel(allCells)
     currentCell = eval(allCells{i});
     cellData(i).cellID = allCells{i};
     cellData(i).heatMap=currentCell;
-    [~,~,cellData(i).CoM,cellData(i).CoMDistance,cellData(i).angleDiff,cellData(i).heatDist] = AsymmetryCalc(currentCell,allCells{i});
+    [cellData(i).regFit,~,cellData(i).CoM,cellData(i).CoMDistance,cellData(i).angleDiff,cellData(i).heatDist] = AsymmetryCalc(currentCell,allCells{i});
     
 end
 toc

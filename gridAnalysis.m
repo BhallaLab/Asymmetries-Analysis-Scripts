@@ -1,4 +1,4 @@
-function [IRtrend, peakMap, AUCMap, timetopeakMap, metadata] = gridAnalysis(recFile, coordFile,flank,pulseDur,intensity,gridSize,responseThres,cellID)
+function [IRtrend, peakMap, AUCMap, timetopeakMap, metadata] = gridAnalysis(recFile,coordFile,flank,pulseDur,intensity,gridSize,responseThres,cellID)
 % GRIDANALYSIS takes:
 % recFile   = File where data is saved (*.atf)
 % coordFile = File with grid square coordinates for polygon frames (*.txt)
@@ -28,6 +28,7 @@ sampFreq = 0.001/(data(1,2)-data(1,1));
 % Metadata
 metadata = metadataParser(recFile);
 acqMode = metadata{1,2};
+
 % Coordinates
 fid = fopen(coordFile);
 coord = textscan(fid,'%*u%*u%*u%u');
@@ -48,7 +49,7 @@ disp('Parsing Done.')
 
 %% Stage 3: Heatmaps
 disp('Getting response maps...')
-responseThres = 30;
+%responseThres = 30; not hardcoding the response threshold
 [peakMap, AUCMap, timetopeakMap] = heatmap(patchTrace,responseThres);
 
 disp('Response maps made.')
@@ -62,7 +63,7 @@ else
 end
 
 %% Trace plots
-post = 300;
+post = 100;
 tracePlot(patchTrace, polygonTrace, timeTrace)
 
 %% Local Functions
@@ -129,10 +130,12 @@ end
     end
 
     function [peakMap, AUCMap, timeofpeakMap] = heatmap(patchTrace,peakThres)
-
+    % Update 28Jun19: I found out that the polygon frame is rotated
+    % therefore there is no need to take transpose of the heatmaps. In
+    % future updates, all the camera rotations will be addressed.
         %---variables--------------------------------------------------------------
         TTLstart = pre*sampFreq; % number of points before TTL comes
-        Window = 100*sampFreq; %
+        Window = 100*sampFreq; % 100 ms window
         stimFrames = 1+flank:size(coord)-flank;
         gridTraces = patchTrace(stimFrames,:);
 
@@ -142,7 +145,9 @@ end
         for i=1:size(gridTraces,1)
             peakMap(i)=max(gridTraces(i,TTLstart:TTLstart+Window));
         end
-        peakMap = peakMap';
+        % Update 28Jun19: I found out that the polygon frame is rotated
+        % therefore there is no need to take transpose.
+%         peakMap = peakMap';
         peakMap(peakMap>peakThres)=peakThres;
 
         %----Grid AUC Heatmap------------------------------------------------------
@@ -150,7 +155,9 @@ end
         for i=1:size(gridTraces,1)
             AUCMap(i)=trapz(gridTraces(i,TTLstart:TTLstart+Window));
         end
-        AUCMap = AUCMap';
+        % Update 28Jun19: I found out that the polygon frame is rotated
+        % therefore there is no need to take transpose.
+%         AUCMap = AUCMap';
 
         %----Slope Heatmap-(Future update)-----------------------------------------
 
@@ -160,7 +167,9 @@ end
         for i=1:size(gridTraces,1)
             timeofpeakMap(i)= TraceletPeakTime(i);
         end
-        timeofpeakMap = timeofpeakMap';
+        % Update 28Jun19: I found out that the polygon frame is rotated
+        % therefore there is no need to take transpose.
+%         timeofpeakMap = timeofpeakMap';
     end
 
     function trend = IRchange(patchTrace,pulseCurrent)
@@ -202,39 +211,32 @@ end
     end
 
     function tracePlot(patchTrace,polygonTrace,timeTrace)
-      
+    traceStart = 50;
+    traceEnd = 150;
+    tracePoints = traceStart+traceEnd;
+    windowStart = ((pre-traceStart)*sampFreq)+1; % from 3001st point
+    windowEnd = (pre+traceEnd)*sampFreq; % to 7000th point
+    
+    traceWindow = windowStart:windowEnd;
+    
     figure;
-    axis([-1*pre post 1.1*min(min(patchTrace)) 1.1*max(max(patchTrace))])
+    axis([-1*traceStart traceEnd -5 1.1*max(max(patchTrace))])
     figurePSTH=gcf;
     figurePSTH.Units='normalized';
     figurePSTH.OuterPosition=[0 0 1 1];
 
     for row=1:size(patchTrace,1)
         hold on
-        plot(linspace(-pre,post,10000),patchTrace(row,1:sampFreq*(pre+post)),'k','LineWidth',1)        
+        plot(linspace(-1*traceStart,traceEnd,sampFreq*tracePoints),patchTrace(row,traceWindow),'k','LineWidth',1)       
     end
     hold on;
-    TTLGraph = area(polygonTrace(1,:));
-    TTLGraph.FaceColor = 'red'; %setting colour to red
-    TTLGraph.FaceAlpha = 0.5;
-    TTLGraph.LineWidth = 1;
-    TTLGraph.EdgeColor = 'r';
-
-    exStimTrace = zeros(size(timeTrace));
-    exStimTrace(pre*sampFreq:pre*sampFreq+pulseDur*sampFreq)=2;
-
-    hold on;
-    stimGraph = area(exStimTrace); %plotting the stimulus trace for reference
-    stimGraph.FaceColor = 'blue' ; %setting colour to be blue
-    stimGraph.FaceAlpha = 0.5 ; %setting transparency
-    stimGraph.LineWidth = 1;
-    stimGraph.EdgeColor = 'b';
+    plot(linspace(-1*traceStart,traceEnd,sampFreq*tracePoints),polygonTrace(1,traceWindow),'r','LineWidth',1)
 
     title('Response traces from baseline')
     xlabel('Time (ms)');
     ylabel('mV');
     response_traces = strcat(cellID,'_response_traces_',num2str(gridSize),'x');
-%     print(response_traces,'-dpng')
+    print(response_traces,'-dpng')
 
     % %% PSTH
     % % for PSTH we need to get the timings of the peaks in all the traces. As
@@ -283,4 +285,3 @@ end
     end
 
 end
-
