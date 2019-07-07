@@ -5,6 +5,7 @@ cmp = 'jet';
 %% Peak heatmap
 figure
 gridPeakMap = imagesc(peakMap);
+daspect([0.4,0.7,1])
 
 colormap(cmp)
 h = colorbar();
@@ -23,6 +24,8 @@ print(plotFile,'-dpng')
 %% AuC heatmap
 figure
 gridAUCMap = imagesc(AUCMap);
+daspect([0.4,0.7,1])
+
 colormap(cmp)
 h = colorbar();
 h.Label.String = 'mV';
@@ -39,6 +42,8 @@ print(plotFile,'-dpng')
 %% Time to Peak heatmap
 figure
 gridtimetopeakMap = imagesc(timeofpeakMap);
+daspect([0.4,0.7,1])
+
 colormap(cmp)
 h = colorbar();
 h.Label.String = 'mV';
