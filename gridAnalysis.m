@@ -1,4 +1,4 @@
-function [IRtrend, peakMap, AUCMap, timetopeakMap, metadata] = gridAnalysis(recFile,coordFile,flank,pulseDur,intensity,gridSize,responseThres,cellID)
+function [IRtrend, peakMap, AUCMap, timetopeakMap, peakThres,metadata] = gridAnalysis(recFile,coordFile,flank,pulseDur,intensity,gridSize,cellID)
 % GRIDANALYSIS takes:
 % recFile   = File where data is saved (*.atf)
 % coordFile = File with grid square coordinates for polygon frames (*.txt)
@@ -23,7 +23,7 @@ disp('Reading Files...')
 % Data
 data = dlmread(recFile,delimiter,11,0);
 data = data';
-sampFreq = 0.001/(data(1,2)-data(1,1));
+sampFreq = 0.001/(data(1,2)-data(1,1)); % datapoints per ms
 
 % Metadata
 metadata = metadataParser(recFile);
@@ -49,8 +49,7 @@ disp('Parsing Done.')
 
 %% Stage 3: Heatmaps
 disp('Getting response maps...')
-%responseThres = 30; not hardcoding the response threshold
-[peakMap, AUCMap, timetopeakMap] = heatmap(patchTrace,responseThres);
+[peakMap, AUCMap, timetopeakMap,peakThres] = heatmap(patchTrace);
 
 disp('Response maps made.')
 
@@ -129,7 +128,7 @@ end
         end
     end
 
-    function [peakMap, AUCMap, timeofpeakMap] = heatmap(patchTrace,peakThres)
+    function [peakMap, AUCMap, timeofpeakMap,peakThres] = heatmap(patchTrace)
     % Update 28Jun19: I found out that the polygon frame is rotated
     % therefore there is no need to take transpose of the heatmaps. In
     % future updates, all the camera rotations will be addressed.
@@ -147,7 +146,10 @@ end
         end
         % Update 28Jun19: I found out that the polygon frame is rotated
         % therefore there is no need to take transpose.
-%         peakMap = peakMap';
+        % peakMap = peakMap';
+        
+        %Threshold is 5 mV above the biggest sub-thres response
+        peakThres = max(max(peakMap))+5; 
         peakMap(peakMap>peakThres)=peakThres;
 
         %----Grid AUC Heatmap------------------------------------------------------

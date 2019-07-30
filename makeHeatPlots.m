@@ -1,4 +1,4 @@
-function makeHeatPlots(peakMap, AUCMap, timeofpeakMap,cellIR,scalebarSize,objMag,gridSize,responseThres,cellID)
+function makeHeatPlots(peakMap, AUCMap, timeofpeakMap,cellIR,scalebarSize,objMag,gridSize,peakThres,cellID)
 [a,b,c,d,e]=gridScaleBar(scalebarSize,objMag,gridSize);
 cmp = 'jet';
 
@@ -6,11 +6,11 @@ cmp = 'jet';
 figure
 gridPeakMap = imagesc(peakMap);
 daspect([0.4,0.7,1])
-
+axis off
 colormap(cmp)
 h = colorbar();
 h.Label.String = 'mV';
-titleString = sprintf('Peak Response from baseline(Spikes clipped at %s)', int2str(responseThres));
+titleString = sprintf('Peak Response from baseline(Spikes clipped at %s mV)', int2str(peakThres));
 title(titleString)
 
 %scale bar
@@ -25,10 +25,10 @@ print(plotFile,'-dpng')
 figure
 gridAUCMap = imagesc(AUCMap);
 daspect([0.4,0.7,1])
-
+axis off
 colormap(cmp)
 h = colorbar();
-h.Label.String = 'mV';
+h.Label.String = 'a.u.';
 title('AuC of Response')
 
 %scale bar
@@ -41,12 +41,13 @@ print(plotFile,'-dpng')
 
 %% Time to Peak heatmap
 figure
+timeofpeakMap = timeofpeakMap./20;
 gridtimetopeakMap = imagesc(timeofpeakMap);
 daspect([0.4,0.7,1])
-
+axis off
 colormap(cmp)
 h = colorbar();
-h.Label.String = 'mV';
+h.Label.String = 'ms';
 title('Time to Peak of Responses')
 
 % scale bar

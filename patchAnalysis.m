@@ -64,14 +64,13 @@ if exist('gridRecFile','var') && exist('coordFile','var')
     lightIntensity = 100; %LED brightness
     IRpulse = -50; %hyperpolarizing pulse amplitude for IR measurement
     gridSize = 29;
-    responseThres = 30;
 
-    [IRtrend, peakMap, AUCMap, timetopeakMap, gridMetadata] = gridAnalysis(gridRecFile,coordFile,blankFrames,lightPulseDur,lightIntensity,gridSize,responseThres,cellID);
+    [IRtrend, peakMap, AUCMap, timetopeakMap,peakThres,gridMetadata] = gridAnalysis(gridRecFile,coordFile,blankFrames,lightPulseDur,lightIntensity,gridSize,cellID);
 
     % Make Heat Map Plots
     objMag = 40; % objective used during grid stim
     scaleBar = 50; % 50um scale bar
-    makeHeatPlots(peakMap, AUCMap, timetopeakMap,IRtrend,scaleBar,objMag,gridSize,responseThres,cellID)
+    makeHeatPlots(peakMap, AUCMap, timetopeakMap,IRtrend,scaleBar,objMag,gridSize,peakThres,cellID)
 
 end
 toc
