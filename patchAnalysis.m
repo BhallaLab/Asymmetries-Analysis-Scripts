@@ -16,7 +16,7 @@ clear variables
 clc
 
 %% Experiment Specifications
-tic
+
 % A metadata container to hold all the experimental parameters
 exptSpecs = struct();
 
@@ -40,9 +40,9 @@ exptSpecs(:).lightIntensity = str2double(exptParam{5});
 exptSpecs(:).gridISI = 1000*str2double(exptParam{6});
 
 clear definput dims dlgtitle exptParam prompt
-toc
+
 %% Get the directory path containing the recordings
-tic
+
 recDir = uigetdir('','Select the directory with recording.');
 [~,cellID] = fileparts(recDir);  % get the directory from the end of the path
 [exptSpecs(:).cellID] = cellID;
@@ -64,10 +64,10 @@ for i=1:size(fileList,1)
         error('No ePhys files or coordinates file found in the folder')
     end
 end
-toc
+
 
 %% Passive Properties
-tic
+
 if exist('IRFile','var')
     %Change following values if needed
     [exptSpecs(:).IRpulseStart] = 300;
@@ -76,10 +76,10 @@ if exist('IRFile','var')
 
     [IRPre,CmPre,tauPre]=getPassiveProp(IRFile,exptSpecs);
 end
-toc
+
 
 %% IF Relationship
-tic
+
 if exist('IFFile','var')
     %Change following values if needed
     [exptSpecs(:).IFStepStart] = 100;
@@ -88,10 +88,9 @@ if exist('IFFile','var')
  
     numSpikesPre = IFPlotter(IFFile,exptSpecs);
 end
-toc
 
 %% Grid Response Analysis
-tic
+
 if exist('gridRecFile','var') && exist('coordFile','var')
     exptSpecs(:).IRPulse = -20;
     exptSpecs(:).IFStepStart = 100;
@@ -113,10 +112,10 @@ if exist('gridRecFile','var') && exist('coordFile','var')
     exptSpecs(:).peakThres = peakThres;clear peakThres
 
 end
-toc
+
 %% Plots
 % Make Heat Map Plots
-tic
+
 exptSpecs(:).objMag = 40;
 scaleBar = 50; % 50um scale bar
 makeHeatPlots(peakMap, AUCMap, timetopeakMap,IRtrend,exptSpecs,scaleBar)
@@ -129,7 +128,7 @@ title('Distribution of Response Amplitudes')
 plotFile = strcat(cellID,'_responseDist_',num2str(exptSpecs.gridSize),'x');
 print(plotFile,'-dpng')
 
-toc
+
 %% All response grid (Heavy)
 % figure;
 % figureResponses=gcf;
@@ -153,7 +152,7 @@ toc
 % 
 
 %% Save workspace
-tic
+
 save(cellID)
-toc
+
 % close all
