@@ -15,16 +15,45 @@
 clear variables
 clc
 
+%% Experiment Specifications
+tic
+% A metadata container to hold all the experimental parameters
+exptSpecs = struct();
+
+% User inputs
+prompt = {'Voltage or Current Clamp',...
+    'Grid Size',...
+    'Number of Flanking Frames:'...
+    'Light Intensity in %',...
+    'Pulse Duration in ms',...
+    'Grid Inter Stim Interval in Seconds'};
+dlgtitle = 'Enter Experiment Parameters';
+dims = 1;
+definput = {'Current','29','20','100','10','1'};
+exptParam = inputdlg(prompt,dlgtitle,dims,definput);
+
+exptSpecs(:).clamp = lower(string(exptParam{1}));
+exptSpecs(:).gridSize = str2num(exptParam{2});
+exptSpecs(:).blankFrames = str2num(exptParam{3});
+exptSpecs(:).lightPulseDur = str2double(exptParam{4});
+exptSpecs(:).lightIntensity = str2double(exptParam{5});
+exptSpecs(:).gridISI = 1000*str2double(exptParam{6});
+
+clear definput dims dlgtitle exptParam prompt
+toc
 %% Get the directory path containing the recordings
+tic
 recDir = uigetdir('','Select the directory with recording.');
 [~,cellID] = fileparts(recDir);  % get the directory from the end of the path
+[exptSpecs(:).cellID] = cellID;
+
 cd(recDir)
 fileList = dir('*.*t*'); %list all the files containing data *.atf, *.txt
 
 for i=1:size(fileList,1)
     fil = fileList(i).name;
     if contains(fil,'grid') || contains(fil,'Grid')
-        gridRecFile = fileList(i).name;
+        gridRecFile = fileList(i).name; 
     elseif contains(fil,'IR')
         IRFile = fileList(i).name;
     elseif contains(fil,'IF')
@@ -35,46 +64,96 @@ for i=1:size(fileList,1)
         error('No ePhys files or coordinates file found in the folder')
     end
 end
-
+toc
 
 %% Passive Properties
+tic
 if exist('IRFile','var')
-    pulseStart = 300;
-    pulseEnd = 600;
-    currentPulse = -100; %current pulse in pA
+    %Change following values if needed
+    [exptSpecs(:).IRpulseStart] = 300;
+    [exptSpecs(:).IRpulseEND] = 600;
+    [exptSpecs(:).IRpulse] = -100;
 
-    [IRPre,CmPre,tauPre]=getPassiveProp(IRFile,pulseStart,pulseEnd,currentPulse);
+    [IRPre,CmPre,tauPre]=getPassiveProp(IRFile,exptSpecs);
 end
-
+toc
 
 %% IF Relationship
+tic
 if exist('IFFile','var')
-    currentSteps = -50:10:140;
-    stepStart = 100;
-    stepEnd = 600;
-    numSpikesPre = IFPlotter(IFFile,stepStart,stepEnd,currentSteps);
+    %Change following values if needed
+    [exptSpecs(:).IFStepStart] = 100;
+    [exptSpecs(:).IFStepEnd] = 600;
+    [exptSpecs(:).IFcurrentSteps] = [-50:10:140];
+ 
+    numSpikesPre = IFPlotter(IFFile,exptSpecs);
 end
-
+toc
 
 %% Grid Response Analysis
 tic
 if exist('gridRecFile','var') && exist('coordFile','var')
-    blankFrames = 20; % number of blank frames on either side of grid stimulation 
-    lightPulseDur = 10; %Light pulse duration, ms
-    lightIntensity = 100; %LED brightness
-    IRpulse = -50; %hyperpolarizing pulse amplitude for IR measurement
-    gridSize = 29;
-
-    [IRtrend, peakMap, AUCMap, timetopeakMap,peakThres,gridMetadata] = gridAnalysis(gridRecFile,coordFile,blankFrames,lightPulseDur,lightIntensity,gridSize,cellID);
-
-    % Make Heat Map Plots
-    objMag = 40; % objective used during grid stim
-    scaleBar = 50; % 50um scale bar
-    makeHeatPlots(peakMap, AUCMap, timetopeakMap,IRtrend,scaleBar,objMag,gridSize,peakThres,cellID)
+    exptSpecs(:).IRPulse = -20;
+    exptSpecs(:).IFStepStart = 100;
+    exptSpecs(:).gridBaseline = 1:4000;
+    exptSpecs(:).gridPre = 200;
+    recFileInfo = dir(gridRecFile);
+    exptSpecs(:).dateofExpt = recFileInfo.date; clear recFileInfo;
+    
+    if exptSpecs.clamp == "voltage"
+        exptSpecs(:).unit = 'pA';
+    elseif exptSpecs.clamp == "current"
+        exptSpecs(:).unit = 'mV';
+    else
+        exptSpecs(:).unit = '';
+    end
+            
+    
+    [IRtrend, peakMap, AUCMap, timetopeakMap,peakThres,polygonTracelet,patchTracelets,exptSpecs] = gridAnalysis(gridRecFile,coordFile,exptSpecs);
+    exptSpecs(:).peakThres = peakThres;clear peakThres
 
 end
 toc
+%% Plots
+% Make Heat Map Plots
+tic
+exptSpecs(:).objMag = 40;
+scaleBar = 50; % 50um scale bar
+makeHeatPlots(peakMap, AUCMap, timetopeakMap,IRtrend,exptSpecs,scaleBar)
+
+% Make distribution histogram of peak of responses
+responsePeaks = reshape(peakMap,[1,exptSpecs.gridSize^2]);
+figure;
+hist(responsePeaks,100);
+title('Distribution of Response Amplitudes')
+plotFile = strcat(cellID,'_responseDist_',num2str(exptSpecs.gridSize),'x');
+print(plotFile,'-dpng')
+
+toc
+%% All response grid (Heavy)
+% figure;
+% figureResponses=gcf;
+% figureResponses.Units='normalized';
+% figureResponses.OuterPosition=[0 0 1 1];
+% gridSize = exptSpecs.gridSize;
+% 
+% plotLim = [min(min(patchTracelets)) max(max(patchTracelets))];
+% for i=1:gridSize^2
+%     subplot(gridSize,gridSize,i)
+%     plot(patchTracelets(i,:))
+%     ylim(plotLim)
+%     axis off
+% end
+% toc
+% title('All Responses to Grid Stimulation')
+% allResponses = strcat(cellID,'allResponses_',num2str(exptSpecs.gridSize),'x');
+% print(allResponses,'-dpng')
+% clear fig*
+% 
+% 
 
 %% Save workspace
+tic
 save(cellID)
-close all
+toc
+% close all

@@ -1,4 +1,4 @@
-function [IR, Cm, Tau] = getPassiveProp(recFile,tStart,tEnd,delI)
+function [IR, Cm, Tau] = getPassiveProp(recFile,exptSpecs)
 % GETPASSIVEPROP takes data file of a current clamp recording and the pulse
 % parameters (start time, end time and pulse amplitude) to compute the
 % input resistance (IR), capacitance (Cm) and time constant (Tau) of the
@@ -8,6 +8,9 @@ function [IR, Cm, Tau] = getPassiveProp(recFile,tStart,tEnd,delI)
 %   
 %   See also TRACEPARSE, HEATMAP, SCALEBAR, MAKEPLOTS, TRACEPLOT, IRTREND, IFPLOTTER.
 
+tStart = exptSpecs.IRpulseStart;
+tEnd = exptSpecs.IRpulseEND;
+delI = exptSpecs.IRpulse;
 
 data = dlmread(recFile,'\t',11,0);
 

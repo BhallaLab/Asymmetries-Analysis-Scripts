@@ -1,4 +1,9 @@
-function makeHeatPlots(peakMap, AUCMap, timeofpeakMap,cellIR,scalebarSize,objMag,gridSize,peakThres,cellID)
+function makeHeatPlots(peakMap, AUCMap, timeofpeakMap,cellIR,exptSpecs,scalebarSize)
+objMag=exptSpecs.objMag;
+gridSize=exptSpecs.gridSize;
+peakThres=exptSpecs.peakThres;
+cellID=exptSpecs.cellID;
+
 [a,b,c,d,e]=gridScaleBar(scalebarSize,objMag,gridSize);
 cmp = 'jet';
 
@@ -9,8 +14,9 @@ daspect([0.4,0.7,1])
 axis off
 colormap(cmp)
 h = colorbar();
-h.Label.String = 'mV';
-titleString = sprintf('Peak Response from baseline(Spikes clipped at %s mV)', int2str(peakThres));
+h.Label.String = exptSpecs.unit;
+%titleString = sprintf('Peak Response from baseline(Spikes clipped at %s %s)', int2str(peakThres), exptSpecs.unit);
+titleString = sprintf('Peak Response from baseline (%s)',exptSpecs.unit);
 title(titleString)
 
 %scale bar
@@ -59,12 +65,12 @@ plotFile = strcat(cellID,'_gridtimetoPeakMap_',num2str(gridSize),'x');
 print(plotFile,'-dpng')
 
 %% IR Trend
-figure
 if isnan(cellIR)
-    disp('')
+    disp('No IR Trend Found')
 else
-    plot(1:881,cellIR,'b','LineWidth',1);hold on;
-    plot(1:881,movmean(cellIR,[10 0]),'r','LineWidth',3)
+    figure
+    plot(1:length(cellIR),cellIR,'b','LineWidth',1);hold on;
+    plot(1:length(cellIR),movmean(cellIR,[10 0]),'r','LineWidth',3)
     xlabel('Trials')
     ylabel('IR (M\Omega)')
     title('Input Resistance during the grid experiment')

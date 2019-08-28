@@ -1,4 +1,4 @@
-function [IRtrend, peakMap, AUCMap, timetopeakMap, peakThres,metadata] = gridAnalysis(recFile,coordFile,flank,pulseDur,intensity,gridSize,cellID)
+function [IRtrend, peakMap, AUCMap, timetopeakMap, peakThres,polygonTracelet, patchTracelets,exptSpecs] = gridAnalysis(gridRecFile,coordFile,exptSpecs)
 % GRIDANALYSIS takes:
 % recFile   = File where data is saved (*.atf)
 % coordFile = File with grid square coordinates for polygon frames (*.txt)
@@ -10,26 +10,36 @@ function [IRtrend, peakMap, AUCMap, timetopeakMap, peakThres,metadata] = gridAna
 %  see also GETPASSIVEPROP, IFPLOTTER, MAKEHEATPLOTS, ASYMMETRYCALC.
 
 %% Stage 1: Parsing recording file into data
+flank = exptSpecs.blankFrames;
+pulseDur = exptSpecs.lightPulseDur;
+intensity=exptSpecs.lightIntensity;
+gridSize=exptSpecs.gridSize;
+cellID = exptSpecs.cellID;
+
 delimiter = '\t';
 formatSpec = '%q%[^\n\r]';
 metaDataRows = 11;
-isi = 1000; % inter-stim interval in ms, constant
-baselineWindow = 1:4000;
-pre = 200; %ms before the stim
 
+isi = exptSpecs.gridISI; % inter-stim interval in ms, constant
+baselineWindow = exptSpecs.gridBaseline;
+pre = exptSpecs.gridPre; %ms before the stim
+
+%% Reading Data
 disp('Parsing Data...')
 disp('Reading Files...')
 
 % Data
-data = dlmread(recFile,delimiter,11,0);
+data = dlmread(gridRecFile,delimiter,11,0);
 data = data';
 sampFreq = 0.001/(data(1,2)-data(1,1)); % datapoints per ms
+exptSpecs(:).sampFreq = sampFreq;
 
-% Metadata
-metadata = metadataParser(recFile);
-acqMode = metadata{1,2};
+%% Metadata
+[acqMode,comments] = metadataParser(gridRecFile);
+exptSpecs(:).acqMode=acqMode;
+exptSpecs(:).comments = comments;
 
-% Coordinates
+%% Coordinates
 fid = fopen(coordFile);
 coord = textscan(fid,'%*u%*u%*u%u');
 fclose(fid);
@@ -43,18 +53,17 @@ disp('File reading complete.')
 
 %% Stage 2: Traceparse
 disp('Extracting channel data')
-
 [patchTrace, polygonTrace, timeTrace]= traceParse(data,coord,flank);
 disp('Parsing Done.')
 
 %% Stage 3: Heatmaps
-disp('Getting response maps...')
+disp('Generating response maps...')
 [peakMap, AUCMap, timetopeakMap,peakThres] = heatmap(patchTrace);
 
 disp('Response maps made.')
 
 %% Stage 4: IR Trend
-if acqMode == "Episodic Stimulation"
+if exptSpecs.clamp == "current" && acqMode == 'Episodic Stimulation' 
     pulseCurrent = -50;
     IRtrend = IRchange(patchTrace,pulseCurrent);
 else
@@ -62,8 +71,7 @@ else
 end
 
 %% Trace plots
-post = 100;
-tracePlot(patchTrace, polygonTrace, timeTrace)
+[polygonTracelet, patchTracelets] = tracePlot(patchTrace, polygonTrace, timeTrace);
 
 %% Local Functions
 
@@ -71,12 +79,12 @@ tracePlot(patchTrace, polygonTrace, timeTrace)
     %PatchTrace is every even column starting from 2
     %PolygonTrace is every odd column starting from 2
 
-    if acqMode == "Episodic Stimulation"
+    if acqMode == 'Episodic Stimulation'
         timeTrace = data(1,:); %first column of the data
         patchTrace = data((2:2:size(data,1)),:); %channel 1 (IN0), all even rows
         polygonTrace = data((3:2:size(data,1)),:); %channel 2 (IN1), all odd rows
         
-        polygonTrace(polygonTrace<75)=0; polygonTrace(polygonTrace>75)=5;
+        polygonTrace(polygonTrace<75)=0; polygonTrace(polygonTrace>75)=1;
 
         stimFrames = 1+flank:size(patchTrace,1)-flank;
         patchTrace(stimFrames,:) = matrixReorder(patchTrace(stimFrames,:),coord(stimFrames));
@@ -87,7 +95,7 @@ tracePlot(patchTrace, polygonTrace, timeTrace)
             polygonTrace(i,:) = baselineCorrect(polygonTrace(i,:),baselineWindow);
         end
 
-    elseif acqMode == "Gap Free"
+    elseif acqMode == 'Gap Free'
         isiDatapoints = isi*sampFreq; %sample points per stim, usually 20000
         
         timeTrace = linspace(pre*(-1),pre*(-1)+isi,isiDatapoints);
@@ -187,7 +195,7 @@ end
     %Output values   -> Average input resistance during the experiment and
     %                   A vector with input resistance values for every sweep
 
-        sampFreq = 20;
+        
         IRWindow = sampFreq*500:sampFreq*800;
         IRTracelets = patchTrace(:,IRWindow);
         trend = zeros(size(patchTrace,1),1);
@@ -198,8 +206,8 @@ end
         end
     end
 
-    function metadata = metadataParser(recFile)
-        fileID = fopen(recFile);
+    function [acqMode,comments] = metadataParser(gridRecFile)
+        fileID = fopen(gridRecFile);
         meta = textscan(fileID, formatSpec, metaDataRows, 'Delimiter', delimiter, 'ReturnOnError', false, 'EndOfLine', '\r\n');
         acqMode = strsplit(meta{1}{3},'=');
         acqMode = string(acqMode{2});
@@ -212,7 +220,7 @@ end
         fclose(fileID);
     end
 
-    function tracePlot(patchTrace,polygonTrace,timeTrace)
+    function [polygonTracelet, patchTracelets] = tracePlot(patchTrace,polygonTrace,timeTrace)
     traceStart = 50;
     traceEnd = 150;
     tracePoints = traceStart+traceEnd;
@@ -222,7 +230,7 @@ end
     traceWindow = windowStart:windowEnd;
     
     figure;
-    axis([-1*traceStart traceEnd -5 1.1*max(max(patchTrace))])
+    axis([-1*traceStart traceEnd min(min(patchTrace(:,traceWindow)))-5 max(max(patchTrace(:,traceWindow)))+5])
     figurePSTH=gcf;
     figurePSTH.Units='normalized';
     figurePSTH.OuterPosition=[0 0 1 1];
@@ -232,14 +240,18 @@ end
         plot(linspace(-1*traceStart,traceEnd,sampFreq*tracePoints),patchTrace(row,traceWindow),'k','LineWidth',1)       
     end
     hold on;
-    plot(linspace(-1*traceStart,traceEnd,sampFreq*tracePoints),polygonTrace(1,traceWindow),'r','LineWidth',1)
+    polyLevel = max(max(patchTrace(:,traceWindow)));
+    plot(linspace(-1*traceStart,traceEnd,sampFreq*tracePoints),polyLevel*polygonTrace(1,traceWindow),'c','LineWidth',2)
 
     title('Response traces from baseline')
     xlabel('Time (ms)');
-    ylabel('mV');
+    ylabel(exptSpecs.unit);
     response_traces = strcat(cellID,'_response_traces_',num2str(gridSize),'x');
     print(response_traces,'-dpng')
-
+    
+    patchTracelets = patchTrace(:,traceWindow);
+    polygonTracelet = polygonTrace(1,traceWindow);
+    
     % %% PSTH
     % % for PSTH we need to get the timings of the peaks in all the traces. As
     % % there are going to be 841 traces for each trial, we can generate a

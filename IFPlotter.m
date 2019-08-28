@@ -1,4 +1,9 @@
-function numSpikes = IFPlotter(recFile,tStart,tEnd,iSteps)
+function numSpikes = IFPlotter(recFile,exptSpecs)
+
+tStart = exptSpecs(:).IFStepStart;
+tEnd = exptSpecs(:).IFStepEnd;
+iSteps = exptSpecs(:).IFcurrentSteps;
+
 data = dlmread(recFile,'\t',11,0);
 traceTime = data(:,1);
 trials = data(:,2:end);
