@@ -1,11 +1,9 @@
-function [IRtrend, peakMap, AUCMap, timetopeakMap, peakThres,polygonTracelet, patchTracelets,exptSpecs] = gridAnalysis(gridRecFile,coordFile,exptSpecs)
+function [IRtrend, peakMap, AUCMap, timetopeakMap, peakThres,polygonTracelet,patchTracelets,exptSpecs] = gridAnalysis(gridRecFile,coordFile,exptSpecs)
 % GRIDANALYSIS takes:
-% recFile   = File where data is saved (*.atf)
-% coordFile = File with grid square coordinates for polygon frames (*.txt)
-% flank     = Number of flanking frames
-% pulseDur  = Duration of light pulse, stored in metadata
-% intensity = Intensity of light pulse, stored in metadata
-% gridSize  = Size of grid (29x29, 10x10...)
+% gridRecFile   = File where data is saved (*.atf)
+% coordFile     = File with grid square coordinates for polygon frames (*.txt)
+% exptSpecs     = metadata container
+% The outputs now also include tracelets of the stimulus window.
 %
 %  see also GETPASSIVEPROP, IFPLOTTER, MAKEHEATPLOTS, ASYMMETRYCALC.
 
@@ -20,9 +18,9 @@ delimiter = '\t';
 formatSpec = '%q%[^\n\r]';
 metaDataRows = 11;
 
-isi = exptSpecs.gridISI; % inter-stim interval in ms, constant
-baselineWindow = exptSpecs.gridBaseline;
-pre = exptSpecs.gridPre; %ms before the stim
+isi = exptSpecs.gridISI;                                   % inter-stim interval in ms, constant
+baselineWindow = exptSpecs.gridBaseline;                   % Window to calculate baseline
+pre = exptSpecs.gridPre;                                   % ms before the stim
 
 %% Reading Data
 disp('Parsing Data...')
@@ -31,15 +29,19 @@ disp('Reading Files...')
 % Data
 data = dlmread(gridRecFile,delimiter,11,0);
 data = data';
-sampFreq = 0.001/(data(1,2)-data(1,1)); % datapoints per ms
+sampFreq = 0.001/(data(1,2)-data(1,1));                    % datapoints per ms
 exptSpecs(:).sampFreq = sampFreq;
 
 %% Metadata
+disp('Reading Metadata...')
+
 [acqMode,comments] = metadataParser(gridRecFile);
 exptSpecs(:).acqMode=acqMode;
 exptSpecs(:).comments = comments;
 
 %% Coordinates
+disp('Reading Pixel Positions...')
+
 fid = fopen(coordFile);
 coord = textscan(fid,'%*u%*u%*u%u');
 fclose(fid);
@@ -52,18 +54,22 @@ end
 disp('File reading complete.')
 
 %% Stage 2: Traceparse
-disp('Extracting channel data')
+disp('Extracting channel data...')
+
 [patchTrace, polygonTrace, timeTrace]= traceParse(data,coord,flank);
+
 disp('Parsing Done.')
 
 %% Stage 3: Heatmaps
 disp('Generating response maps...')
+
 [peakMap, AUCMap, timetopeakMap,peakThres] = heatmap(patchTrace);
 
 disp('Response maps made.')
 
 %% Stage 4: IR Trend
-if exptSpecs.clamp == "current" && acqMode == 'Episodic Stimulation' 
+
+if exptSpecs.clamp == 'current' && acqMode == 'Episodic Stimulation' 
     pulseCurrent = -50;
     IRtrend = IRchange(patchTrace,pulseCurrent);
 else
@@ -71,7 +77,9 @@ else
 end
 
 %% Trace plots
-[polygonTracelet, patchTracelets] = tracePlot(patchTrace, polygonTrace, timeTrace);
+
+[polygonTracelet,patchTracelets] = tracePlot(patchTrace, polygonTrace, timeTrace);
+%tracePlot(patchTrace, polygonTrace, timeTrace);
 
 %% Local Functions
 
@@ -84,7 +92,7 @@ end
         patchTrace = data((2:2:size(data,1)),:); %channel 1 (IN0), all even rows
         polygonTrace = data((3:2:size(data,1)),:); %channel 2 (IN1), all odd rows
         
-        polygonTrace(polygonTrace<75)=0; polygonTrace(polygonTrace>75)=1;
+        polygonTrace(polygonTrace<1)=0; polygonTrace(polygonTrace>1)=1;
 
         stimFrames = 1+flank:size(patchTrace,1)-flank;
         patchTrace(stimFrames,:) = matrixReorder(patchTrace(stimFrames,:),coord(stimFrames));
@@ -250,7 +258,7 @@ end
     print(response_traces,'-dpng')
     
     patchTracelets = patchTrace(:,traceWindow);
-    polygonTracelet = polygonTrace(1,traceWindow);
+    polygonTracelet = polygonTrace(21,traceWindow);
     
     % %% PSTH
     % % for PSTH we need to get the timings of the peaks in all the traces. As

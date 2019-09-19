@@ -6,12 +6,23 @@ cellID=exptSpecs.cellID;
 
 [a,b,c,d,e]=gridScaleBar(scalebarSize,objMag,gridSize);
 cmp = 'jet';
+%% Rotation correction: This corrects the rotation of the grid peaks w.r.t the camera frame
+% When overlaying two images: camera and heatmap, the heatmap pixel#1
+% should correspond to left bottom and pixel#29 should correspond to left
+% top. This rotation takes care of that.
+% The transformation is essentially flipping in vertical and horizontal both and then taking a transpose.
+% This approach is better than changing the original peakMap because the
+% original peakMap preserves the pixel identity also as 'ij' address.
+
+peakMapFT = (rot90(peakMap,2))';
+AUCMapFT = (rot90(AUCMap,2))';
+timeofpeakMapFT = (rot90(timeofpeakMap,2))';
 
 %% Peak heatmap
 figure
-gridPeakMap = imagesc(peakMap);
+gridPeakMap = imagesc(peakMapFT);
 daspect([0.4,0.7,1])
-axis off
+axis on
 colormap(cmp)
 h = colorbar();
 h.Label.String = exptSpecs.unit;
@@ -29,7 +40,7 @@ print(plotFile,'-dpng')
 
 %% AuC heatmap
 figure
-gridAUCMap = imagesc(AUCMap);
+gridAUCMap = imagesc(AUCMapFT);
 daspect([0.4,0.7,1])
 axis off
 colormap(cmp)
@@ -47,8 +58,8 @@ print(plotFile,'-dpng')
 
 %% Time to Peak heatmap
 figure
-timeofpeakMap = timeofpeakMap./20;
-gridtimetopeakMap = imagesc(timeofpeakMap);
+timeofpeakMapFT = timeofpeakMapFT./20;
+gridtimetopeakMap = imagesc(timeofpeakMapFT);
 daspect([0.4,0.7,1])
 axis off
 colormap(cmp)
