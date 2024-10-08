@@ -1,3 +1,29 @@
 *.atf
 *.zip
 *.asv
+
+# folders
+*test*
+testExamples
+testScripts
+.vscode
+__pycache__
+.ipynb_checkpoints
+venv-ephys
+*Raw*
+*raw*
+*notebooks*
+
+# files
+*temp*.*
+*copy*.*
+*test*.*
+*raw*.*
+*.h5
+*.xlsx
+*.csv
+*.cpython*
+*.html
+labnotes*
+untitled*
+*notebook*.ipynb
