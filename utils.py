@@ -9,8 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from scipy.signal import filter_design
-from scipy.signal import butter, bessel, decimate, sosfiltfilt
+from scipy.signal import filtfilt
+from scipy.signal import butter, bessel, decimate, sosfiltfilt, iirnotch
 from scipy.signal import find_peaks, peak_widths
 
 frameSize = [13032.25, 7419.2]  # Aug 2021 calibration
@@ -30,7 +30,9 @@ analysed_properties3 = ['cell_fpr_max', 'cell_fpr_min', 'cell_fpr_auc', 'cell_fp
 
 analysed_properties1_abbreviations = ['pc','pcn','ac','sc','dc','pf','pfn']
         
-def gridSizeCalc(sqSize,objMag,frameSz=frameSize):
+def gridSizeCalc(sqSize : list[int],
+                 objMag : float,
+                 frameSz: list[float] = frameSize) -> list[int]:
 
     gridSize = np.array([1,1])
 
@@ -48,7 +50,9 @@ def gridSizeCalc(sqSize,objMag,frameSz=frameSize):
     squareSizeCalc(np.ceil(gridSize),objMag)
 
 
-def squareSizeCalc(gridSize,objMag,frameSz=frameSize):
+def squareSizeCalc(gridSize,
+                   objMag,
+                   frameSz=frameSize):
     '''
     Pass two values as the arguments for the file: [gridSizeX, gridSizeY], objectiveMag
     command line syntax should look like:  [24 24] 40
@@ -66,7 +70,10 @@ def squareSizeCalc(gridSize,objMag,frameSz=frameSize):
     return ss
 
 
-def butter_bandpass(lowcut, highcut, fs, order=5):
+def butter_bandpass(lowcut, 
+                    highcut, 
+                    fs, 
+                    order=5):
     nyq = 0.5 * fs
     low = lowcut / nyq
     high = highcut / nyq
@@ -74,7 +81,22 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     return sos
 
 
-def filter_data(x, filter_type='butter', low_cutoff=0.1, high_cutoff=500,sampling_freq=2e4):
+def filter_data(x, 
+                filter_type='butter', 
+                low_cutoff=0.1, 
+                high_cutoff=500,
+                sampling_freq=2e4):
+    '''
+    While filtering, the data is filtered in both forward and reverse directions to avoid phase shift.
+    Filter types: 'butter', 'bessel', 'decimate', 'butter_bandpass'
+    Which filter to use:
+    - Butterworth filter is used for low-pass, high-pass, band-pass, and band-stop filtering. Does not have that much ripples in the passband.
+    - Bessel filter is used for low-pass filtering.
+    - Decimate is used for downsampling the data.
+    - Butterworth bandpass filter is used for bandpass filtering.
+    - notch filter is used for removing 50Hz noise.
+    '''
+
     if filter_type == 'butter':
         sos = butter(N=2, Wn=high_cutoff, fs=sampling_freq, output='sos')
         y = sosfiltfilt(sos,x)
@@ -86,13 +108,23 @@ def filter_data(x, filter_type='butter', low_cutoff=0.1, high_cutoff=500,samplin
     elif filter_type == 'butter_bandpass':
         sos = butter_bandpass(lowcut=low_cutoff, highcut=high_cutoff, fs=sampling_freq, order=5)
         y = sosfiltfilt(sos, x)
+    elif filter_type == 'notch':
+        # remove 50Hz noise
+        f0, Q = 50, 5
+        b,a = iirnotch(f0, Q, fs=sampling_freq)
+        y = filtfilt(b, a, x, )
     else:
         y = x
     return y
 
 
 # map one range of values to another
-def map_range( input_signal, in_min, in_max, out_min, out_max ):
+def map_range(input_signal, 
+              in_min, 
+              in_max, 
+              out_min, 
+              out_max):
+
     return (input_signal - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 
@@ -140,7 +172,9 @@ def binarize_trace(trace, max_value='signal_max', method='derivative', threshold
         neg_peaks, _ = find_peaks(d_trace, height=0.25*min_of_d_trace, distance=100)
         # assert  that the peaks are equal in number otherwise pass assertion error
         
-        assert len(pos_peaks) == len(neg_peaks), "Error in photodiode signal. pos_peaks and neg_peaks are not of the same length. Peak detection fault."
+        assert len(pos_peaks) == \
+            len(neg_peaks), "Error in photodiode signal. \
+            pos_peaks and neg_peaks are not of the same length. Peak detection fault."
 
         
         peak_locs = {'left': pos_peaks, 'right': neg_peaks}
@@ -270,7 +304,14 @@ def dual_alpha_function(t, A, B, tau1, tau2, delta1, delta2):
     return (1.0/(tau1-tau2)) * (np.exp(-t/tau1) - np.exp(-t/tau2))
     
 
-def _PSP_start_time(response_array,clamp='CC',EorI='E',stimStartTime=0.2,Fs=2e4, filter_type='butter', filter_cutoff=2000  ):
+def _PSP_start_time(response_array,
+                    clamp='CC',
+                    EorI='E',
+                    stimStartTime=0.2,
+                    Fs=2e4, 
+                    filter_type='butter', 
+                    filter_cutoff=2000,
+                    ):
     '''
     Input: nxm array where n is number of frames, m is datapoints per sweep
     '''
@@ -285,8 +326,8 @@ def _PSP_start_time(response_array,clamp='CC',EorI='E',stimStartTime=0.2,Fs=2e4,
     w                   = 40 if np.max(avgAllSpots)>=30 else 60
     
     if clamp == 'VC' and EorI == 'E':
-        avgAllSpots     = -1*avgAllSpots
-        w               = 60
+        avgAllSpots *= -1
+        w = 60
 
     
     stimStart           = int(Fs*stimStartTime)
@@ -319,7 +360,16 @@ def _PSP_start_time(response_array,clamp='CC',EorI='E',stimStartTime=0.2,Fs=2e4,
 
 
 
-def get_signal_inflection_time(signal, peaks_to_detect='all', width=20, movavg_window=40, baseline_time_sec=0.2, stim_start_sec=0.2, Fs=2e4, filter_type='butter', filter_cutoff=2000, mode='test'):
+def get_signal_inflection_time(signal, 
+                               peaks_to_detect='all', 
+                               width=20, 
+                               movavg_window=40, 
+                               baseline_time_sec=0.2, 
+                               stim_start_sec=0.2, 
+                               Fs=2e4, 
+                               filter_type='butter', 
+                               filter_cutoff=2000, 
+                               mode='test'):
     """
     Calculate the inflection point time of a signal.
 
@@ -906,6 +956,7 @@ def convert_list_column_to_new_df(df, column_name: str, new_column_name_sequence
 
 #TODO: transfer this function somewhere better Sept 2023
 def save_expanded_df(df):
+
     # expand the param df fully, more handy for plotting
     analysed_properties1 = utils.analysed_properties1
     analysed_properties2 = utils.analysed_properties2
@@ -920,3 +971,34 @@ def save_expanded_df(df):
     df3 = df3.drop(columns=analysed_properties1+analysed_properties2)
     # save df3 as analysed params expanded
     df3.to_hdf(r"parsed_data\all_cells_FreqSweep_combined_expanded.h5", key='data', mode='w')
+
+
+def get_cellwise_numtrials(datadf, columns = ['cellID', 'exptID']):
+    # get number of trials for each cell
+    numtrials = datadf.groupby(columns)['trialID'].nunique()
+    total_combinations = len(numtrials)
+    totaltrials = numtrials.sum()
+    combinations = '_'.join(columns) + ' combined'
+    print(f'##\n Assessing dataframe: \nTotal {combinations}: {total_combinations}\nTotal Trials: {totaltrials}\nData Size: {datadf.shape}', '\n', numtrials)
+    return numtrials
+
+# write a function to expand a column containing list into multiple columns and save them with new column names
+def expand_list_column(df_in, column_name, new_column_name_prefix):
+    
+    num_columns = len(df_in[column_name].iloc[0])
+    print('input df shape: ', df_in.shape, 'num of new columns: ', num_columns)
+    new_column_names = [new_column_name_prefix + str(i) for i in range(num_columns)]
+
+    column_cut = df_in[column_name].to_list()
+    print('new columns: ', new_column_names, len(column_cut), len(column_cut[0]))
+    try:
+        df_x = pd.DataFrame(column_cut, columns=new_column_names, index=df_in.index)
+        df_in = pd.concat([df_in, df_x], axis=1)
+        # df_in.drop(columns=column_name, inplace=True)
+        print(df_x.shape, df_in.shape)
+        return df_in
+    except Exception as e:
+        print(e)
+        print('returning cut column as list instead')
+        return column_cut
+    
